@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Timezone Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #2d3748;
+            color: #e2e8f0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            padding: 60px 20px 20px 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #4a5568;
+            padding-bottom: 15px;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #63b3ed;
+        }
+
+        .converter-section {
+            flex: 1;
+            margin-bottom: 25px;
+        }
+
+        .left-panel {
+            flex: 0 0 350px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            color: #a0aec0;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        select, input {
+            padding: 8px 12px;
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            background: #1a202c;
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+
+        select {
+            flex: 1;
+        }
+
+        input[type="time"] {
+            flex: 0 0 120px;
+        }
+
+        .result {
+            padding: 12px;
+            background: #1a202c;
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .timezone-display {
+            flex: 1;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            align-content: start;
+        }
+
+        .timezone-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px 12px;
+            background: #1a202c;
+            border-radius: 6px;
+            border-left: 3px solid #63b3ed;
+            text-align: center;
+        }
+
+        .timezone-name {
+            font-weight: 500;
+            color: #63b3ed;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .timezone-time {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 18px;
+            color: #68d391;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #a0aec0;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+            z-index: 20;
+        }
+
+        .close-btn:hover {
+            color: #e2e8f0;
+        }
+
+        .nav-btn {
+            background: #4a5568;
+            border: none;
+            color: #e2e8f0;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        .nav-btn:hover {
+            background: #63b3ed;
+        }
+
+        .nav-btn.active {
+            background: #63b3ed;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: flex;
+            flex-direction: row;
+            gap: 30px;
+            flex: 1;
+        }
+
+        .settings-page {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            flex: 1;
+            width: 100%;
+        }
+
+        .settings-page.active {
+            display: flex;
+        }
+
+        .settings-section {
+            background: #1a202c;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #4a5568;
+        }
+
+        .settings-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #63b3ed;
+            margin-bottom: 15px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px 0;
+            border-bottom: 1px solid #2d3748;
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .setting-label {
+            font-size: 14px;
+            color: #e2e8f0;
+        }
+
+        .setting-control {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .keybind-input {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            color: #e2e8f0;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            min-width: 120px;
+        }
+
+        .timezone-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            background: #2d3748;
+        }
+
+        .timezone-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid #4a5568;
+        }
+
+        .timezone-checkbox:last-child {
+            border-bottom: none;
+        }
+
+        .timezone-checkbox input {
+            margin-right: 10px;
+        }
+
+        .timezone-checkbox label {
+            font-size: 13px;
+            color: #e2e8f0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="close-btn" onclick="window.close()">×</button>
+        
+        <div style="position: absolute; top: 15px; left: 20px; right: 50px; display: flex; gap: 10px; z-index: 10;">
+            <button class="nav-btn active" onclick="showPage('main')">Converter</button>
+            <button class="nav-btn" onclick="showPage('settings')">Settings</button>
+        </div>
+
+        <div id="main-page" class="page active">
+            <div class="left-panel">
+            <div class="header">
+                <h1 class="title">Timezone Converter</h1>
+            </div>
+
+            <div class="converter-section">
+            <div class="section-title">Convert Time</div>
+            <div class="input-group">
+                <select id="fromTimezone">
+                    <option value="America/New_York">New York (EST/EDT)</option>
+                    <option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
+                    <option value="America/Chicago">Chicago (CST/CDT)</option>
+                    <option value="Europe/London">London (GMT/BST)</option>
+                    <option value="Europe/Paris">Paris (CET/CEST)</option>
+                    <option value="Europe/Berlin">Berlin (CET/CEST)</option>
+                    <option value="Asia/Tokyo">Tokyo (JST)</option>
+                    <option value="Asia/Shanghai">Shanghai (CST)</option>
+                    <option value="Asia/Dubai">Dubai (GST)</option>
+                    <option value="Australia/Sydney">Sydney (AEST/AEDT)</option>
+                </select>
+                <input type="time" id="timeInput" value="12:00">
+            </div>
+            <div class="input-group">
+                <select id="toTimezone">
+                    <option value="America/New_York">New York (EST/EDT)</option>
+                    <option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
+                    <option value="America/Chicago">Chicago (CST/CDT)</option>
+                    <option value="Europe/London" selected>London (GMT/BST)</option>
+                    <option value="Europe/Paris">Paris (CET/CEST)</option>
+                    <option value="Europe/Berlin">Berlin (CET/CEST)</option>
+                    <option value="Asia/Tokyo">Tokyo (JST)</option>
+                    <option value="Asia/Shanghai">Shanghai (CST)</option>
+                    <option value="Asia/Dubai">Dubai (GST)</option>
+                    <option value="Australia/Sydney">Sydney (AEST/AEDT)</option>
+                </select>
+            </div>
+                <div class="result" id="conversionResult">
+                    Select time and timezones to convert
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="converter-section">
+                <div class="section-title">Current Times Around the World</div>
+                <div class="timezone-display" id="timezoneDisplay">
+                    <!-- Timezone times will be populated here -->
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <div id="settings-page" class="settings-page">
+            <div class="settings-section">
+                <div class="settings-title">Keybindings</div>
+                <div class="setting-item">
+                    <div class="setting-label">Toggle Window</div>
+                    <div class="setting-control">
+                        <input type="text" class="keybind-input" id="toggleKeybind" value="CommandOrControl+Shift+T" readonly>
+                        <button onclick="recordKeybind('toggleKeybind')" style="background: #4a5568; border: none; color: #e2e8f0; padding: 4px 8px; border-radius: 4px; cursor: pointer;">Change</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-title">Visible Timezones</div>
+                <div class="timezone-list" id="timezoneList">
+                    <div class="timezone-checkbox">
+                        <input type="checkbox" id="tz-america-new_york" checked>
+                        <label for="tz-america-new_york">New York (EST/EDT)</label>
+                    </div>
+                    <div class="timezone-checkbox">
+                        <input type="checkbox" id="tz-america-los_angeles" checked>
+                        <label for="tz-america-los_angeles">Los Angeles (PST/PDT)</label>
+                    </div>
+                    <div class="timezone-checkbox">
+                        <input type="checkbox" id="tz-america-chicago" checked>
+                        <label for="tz-america-chicago">Chicago (CST/CDT)</label>
+                    </div>
+                    <div class="timezone-checkbox">
+                        <input type="checkbox" id="tz-europe-london" checked>
+                        <label for="tz-europe-london">London (GMT/BST)</label>
+                    </div>
+                    <div class="timezone-checkbox">
+                        <input type="checkbox" id="tz-europe-paris" checked>
+                        <label for="tz-europe-paris">Paris (CET/CEST)</label>
+                    </div>
+                    <div class="timezone-checkbox">
+                        <input type="checkbox" id="tz-europe-berlin" checked>
+                        <label for="tz-europe-berlin">Berlin (CET/CEST)</label>
+                    </div>
+                    <div class="timezone-checkbox">
+                        <input type="checkbox" id="tz-asia-tokyo" checked>
+                        <label for="tz-asia-tokyo">Tokyo (JST)</label>
+                    </div>
+                    <div class="timezone-checkbox">
+                        <input type="checkbox" id="tz-asia-shanghai" checked>
+                        <label for="tz-asia-shanghai">Shanghai (CST)</label>
+                    </div>
+                    <div class="timezone-checkbox">
+                        <input type="checkbox" id="tz-asia-dubai" checked>
+                        <label for="tz-asia-dubai">Dubai (GST)</label>
+                    </div>
+                    <div class="timezone-checkbox">
+                        <input type="checkbox" id="tz-australia-sydney" checked>
+                        <label for="tz-australia-sydney">Sydney (AEST/AEDT)</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
