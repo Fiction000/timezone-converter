@@ -251,7 +251,7 @@ function cancelKeybindRecording() {
     
     // Restore original value
     const settings = JSON.parse(localStorage.getItem('timezoneConverterSettings') || '{}');
-    currentKeybindInput.value = settings.keybinds?.toggle || 'CommandOrControl+Shift+T';
+    currentKeybindInput.value = settings.keybinds?.toggle || 'CommandOrControl+Shift+[';
     
     finishKeybindRecording();
 }
@@ -298,7 +298,9 @@ function loadSettings() {
     const settings = JSON.parse(localStorage.getItem('timezoneConverterSettings') || '{}');
     
     if (settings.keybinds?.toggle) {
-        document.getElementById('toggleKeybind').value = settings.keybinds.toggle;
+        document.getElementById('toggleKeybind').value = formatKeybindForDisplay(settings.keybinds.toggle);
+    } else {
+        document.getElementById('toggleKeybind').value = formatKeybindForDisplay('CommandOrControl+Shift+[');
     }
     
     if (settings.visibleTimezones) {
@@ -334,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         ipcRenderer.on('current-keybind', (event, keybind) => {
-            document.getElementById('toggleKeybind').value = keybind;
+            document.getElementById('toggleKeybind').value = formatKeybindForDisplay(keybind);
         });
     } else {
         console.warn('IPC not available, keybind updates will not work');

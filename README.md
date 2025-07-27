@@ -70,7 +70,7 @@ Click the "Settings" button to access configuration options:
 
 #### Keybindings
 - **Toggle Window**: Configure the global hotkey to show/hide the application
-- Default: `CommandOrControl+Shift+T`
+- Default: `Cmd/Ctrl+Shift+[`
 - Click "Change" and press your desired key combination
 
 #### Visible Timezones

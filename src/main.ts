@@ -6,7 +6,7 @@ import * as path from 'path';
 class TimezoneConverterApp {
   private mainWindow: BrowserWindow | null = null;
   private tray: Tray | null = null;
-  private currentKeybind: string = 'CommandOrControl+Shift+T';
+  private currentKeybind: string = 'CommandOrControl+Shift+[';
   private settingsPath: string;
 
   constructor() {
