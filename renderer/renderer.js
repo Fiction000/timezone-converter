@@ -1,5 +1,13 @@
 const moment = require('moment-timezone');
 
+// Safe IPC renderer access
+let ipcRenderer = null;
+try {
+    ipcRenderer = require('electron').ipcRenderer;
+} catch (error) {
+    console.error('IPC not available:', error);
+}
+
 class TimezoneConverter {
     constructor() {
         this.majorTimezones = [
@@ -182,27 +190,73 @@ function captureKeybind(event) {
     
     event.preventDefault();
     
+    // Allow Escape to cancel recording
+    if (event.key === 'Escape') {
+        cancelKeybindRecording();
+        return;
+    }
+    
     const keys = [];
     if (event.ctrlKey || event.metaKey) keys.push('CommandOrControl');
     if (event.shiftKey) keys.push('Shift');
     if (event.altKey) keys.push('Alt');
     
-    if (event.key !== 'Control' && event.key !== 'Shift' && event.key !== 'Alt' && event.key !== 'Meta') {
-        keys.push(event.key.toUpperCase());
+    // Only add the key if it's not a modifier key and has a meaningful value
+    let regularKey = null;
+    if (event.key !== 'Control' && event.key !== 'Shift' && event.key !== 'Alt' && event.key !== 'Meta' && event.key.length > 0) {
+        regularKey = event.key.toUpperCase();
+        keys.push(regularKey);
     }
     
-    if (keys.length > 1) {
+    // Only proceed if we have at least one modifier AND one regular key
+    const hasModifier = keys.some(k => ['CommandOrControl', 'Shift', 'Alt'].includes(k));
+    const hasRegularKey = regularKey !== null;
+    
+    if (hasModifier && hasRegularKey && keys.length >= 2) {
         const keybind = keys.join('+');
-        currentKeybindInput.value = keybind;
         
-        // Save to settings
-        saveSettings();
+        // Double-check the keybind format is valid
+        const parts = keybind.split('+');
+        const modifiers = parts.filter(p => ['CommandOrControl', 'Shift', 'Alt'].includes(p));
+        const regularKeys = parts.filter(p => !['CommandOrControl', 'Shift', 'Alt'].includes(p));
         
-        // Update the actual keybind in main process
-        // This would need IPC communication in a real app
+        if (modifiers.length >= 1 && regularKeys.length >= 1) {
+            console.log('Valid keybind captured:', keybind);
+            currentKeybindInput.value = keybind;
+            
+            // Save to settings
+            saveSettings();
+            
+            // Update the actual keybind in main process
+            console.log('Sending keybind to main process:', keybind);
+            if (ipcRenderer) {
+                ipcRenderer.send('update-keybind', keybind);
+            } else {
+                console.error('IPC not available, cannot send keybind update');
+            }
+            
+            // Reset recording state only after successful capture
+            finishKeybindRecording();
+        } else {
+            console.log('Incomplete keybind, continue recording. Current keys:', keys);
+        }
+    } else {
+        console.log('Waiting for complete keybind. Has modifier:', hasModifier, 'Has regular key:', hasRegularKey, 'Keys:', keys);
     }
+    // Don't reset if we don't have a valid keybind yet - keep recording
+}
+
+function cancelKeybindRecording() {
+    if (!isRecordingKeybind) return;
     
-    // Reset recording state
+    // Restore original value
+    const settings = JSON.parse(localStorage.getItem('timezoneConverterSettings') || '{}');
+    currentKeybindInput.value = settings.keybinds?.toggle || 'CommandOrControl+Shift+T';
+    
+    finishKeybindRecording();
+}
+
+function finishKeybindRecording() {
     isRecordingKeybind = false;
     const button = currentKeybindInput.nextElementSibling;
     button.textContent = 'Change';
@@ -270,4 +324,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('#timezoneList input[type="checkbox"]').forEach(checkbox => {
         checkbox.addEventListener('change', saveSettings);
     });
+    
+    // IPC listeners
+    if (ipcRenderer) {
+        ipcRenderer.on('keybind-updated', (event, result) => {
+            if (!result.success) {
+                alert('Failed to update keybind: ' + (result.error || 'Unknown error'));
+            }
+        });
+        
+        ipcRenderer.on('current-keybind', (event, keybind) => {
+            document.getElementById('toggleKeybind').value = keybind;
+        });
+    } else {
+        console.warn('IPC not available, keybind updates will not work');
+    }
 });
