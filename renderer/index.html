@@ -317,6 +317,10 @@
             <div class="converter-section">
             <div class="section-title">Convert Time</div>
             <div class="input-group">
+                <input type="date" id="dateInput" style="flex: 1;">
+                <input type="time" id="timeInput" value="12:00" style="flex: 0 0 120px;">
+            </div>
+            <div class="input-group">
                 <select id="fromTimezone">
                     <option value="America/New_York">New York (EST/EDT)</option>
                     <option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
@@ -329,7 +333,6 @@
                     <option value="Asia/Dubai">Dubai (GST)</option>
                     <option value="Australia/Sydney">Sydney (AEST/AEDT)</option>
                 </select>
-                <input type="time" id="timeInput" value="12:00">
             </div>
             <div class="input-group">
                 <select id="toTimezone">

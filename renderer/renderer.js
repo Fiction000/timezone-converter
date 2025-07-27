@@ -34,37 +34,41 @@ class TimezoneConverter {
     }
 
     setupEventListeners() {
+        const dateInput = document.getElementById('dateInput');
         const timeInput = document.getElementById('timeInput');
         const fromTimezone = document.getElementById('fromTimezone');
         const toTimezone = document.getElementById('toTimezone');
 
+        dateInput.addEventListener('change', () => this.convertTime());
         timeInput.addEventListener('change', () => this.convertTime());
         fromTimezone.addEventListener('change', () => this.convertTime());
         toTimezone.addEventListener('change', () => this.convertTime());
 
-        // Set current time as default
+        // Set current date and time as default
         const now = new Date();
+        const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD format
         const currentTime = now.toTimeString().substr(0, 5);
+        dateInput.value = currentDate;
         timeInput.value = currentTime;
     }
 
     convertTime() {
+        const dateInput = document.getElementById('dateInput').value;
         const timeInput = document.getElementById('timeInput').value;
         const fromTimezone = document.getElementById('fromTimezone').value;
         const toTimezone = document.getElementById('toTimezone').value;
         const resultDiv = document.getElementById('conversionResult');
 
-        if (!timeInput) {
-            resultDiv.textContent = 'Please select a time';
+        if (!dateInput || !timeInput) {
+            resultDiv.textContent = 'Please select a date and time';
             return;
         }
 
         try {
             const [hours, minutes] = timeInput.split(':');
-            const sourceTime = moment.tz(fromTimezone)
-                .hour(parseInt(hours))
-                .minute(parseInt(minutes))
-                .second(0);
+            
+            // Create a moment object with the selected date and time in the source timezone
+            const sourceTime = moment.tz(`${dateInput} ${timeInput}`, 'YYYY-MM-DD HH:mm', fromTimezone);
 
             const convertedTime = sourceTime.clone().tz(toTimezone);
 
@@ -73,10 +77,10 @@ class TimezoneConverter {
 
             resultDiv.innerHTML = `
                 <div style="margin-bottom: 8px;">
-                    <strong>${fromName}:</strong> ${sourceTime.format('h:mm A')} (${sourceTime.format('MMM D')})
+                    <strong>${fromName}:</strong> ${sourceTime.format('h:mm A')} (${sourceTime.format('MMM D, YYYY')})
                 </div>
                 <div>
-                    <strong>${toName}:</strong> ${convertedTime.format('h:mm A')} (${convertedTime.format('MMM D')})
+                    <strong>${toName}:</strong> ${convertedTime.format('h:mm A')} (${convertedTime.format('MMM D, YYYY')})
                 </div>
             `;
         } catch (error) {

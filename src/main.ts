@@ -72,7 +72,7 @@ class TimezoneConverterApp {
   private createWindow(): void {
     this.mainWindow = new BrowserWindow({
       width: 800,
-      height: 400,
+      height: 450,
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,
