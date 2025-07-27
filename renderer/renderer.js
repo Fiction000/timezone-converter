@@ -110,7 +110,7 @@ class TimezoneConverter {
         if (settings.visibleTimezones && settings.visibleTimezones.length > 0) {
             return settings.visibleTimezones.map(tz => ({
                 name: tz.name,
-                zone: tz.id
+                zone: tz.zone
             }));
         }
         
@@ -135,8 +135,6 @@ class TimezoneConverter {
 
 // Page navigation functions
 function showPage(pageName) {
-    console.log('Switching to page:', pageName);
-    
     // Hide all pages
     document.querySelectorAll('.page, .settings-page').forEach(page => {
         page.classList.remove('active');
@@ -159,14 +157,23 @@ function showPage(pageName) {
     } else if (pageName === 'settings') {
         document.querySelector('.nav-btn[onclick*="settings"]').classList.add('active');
     }
-    
-    console.log('Settings page element:', document.getElementById('settings-page'));
-    console.log('Settings page active class:', document.getElementById('settings-page').classList.contains('active'));
 }
 
 // Settings management
 let isRecordingKeybind = false;
 let currentKeybindInput = null;
+
+// Function to format keybinds for display
+function formatKeybindForDisplay(keybind) {
+    if (!keybind) return 'Cmd/Ctrl+Shift+[';
+    return keybind.replace('CommandOrControl', 'Cmd/Ctrl');
+}
+
+// Function to format keybinds for internal use
+function formatKeybindForInternal(keybind) {
+    if (!keybind) return 'CommandOrControl+Shift+[';
+    return keybind.replace('Cmd/Ctrl', 'CommandOrControl');
+}
 
 function recordKeybind(inputId) {
     if (isRecordingKeybind) return;
@@ -267,29 +274,54 @@ function finishKeybindRecording() {
 }
 
 function saveSettings() {
+    const displayValue = document.getElementById('toggleKeybind').value;
+    const internalValue = formatKeybindForInternal(displayValue);
+    
     const settings = {
         keybinds: {
-            toggle: document.getElementById('toggleKeybind').value
+            toggle: internalValue
         },
         visibleTimezones: []
     };
     
     // Get checked timezones
-    document.querySelectorAll('#timezoneList input[type="checkbox"]:checked').forEach(checkbox => {
-        const timezoneId = checkbox.id.replace('tz-', '').replace(/-/g, '/');
-        const label = checkbox.nextElementSibling.textContent;
-        settings.visibleTimezones.push({
-            id: timezoneId,
-            name: label.split(' (')[0],
-            zone: timezoneId.charAt(0).toUpperCase() + timezoneId.slice(1)
-        });
+    const checkedBoxes = document.querySelectorAll('#timezoneList input[type="checkbox"]:checked');
+    
+    // Direct mapping based on known checkbox IDs
+    checkedBoxes.forEach(checkbox => {
+        const checkboxId = checkbox.id.replace('tz-', '');
+        
+        const zoneMap = {
+            'america-new_york': 'America/New_York',
+            'america-los_angeles': 'America/Los_Angeles', 
+            'america-chicago': 'America/Chicago',
+            'europe-london': 'Europe/London',
+            'europe-paris': 'Europe/Paris',
+            'europe-berlin': 'Europe/Berlin',
+            'asia-tokyo': 'Asia/Tokyo',
+            'asia-shanghai': 'Asia/Shanghai',
+            'asia-dubai': 'Asia/Dubai',
+            'australia-sydney': 'Australia/Sydney'
+        };
+        
+        const zone = zoneMap[checkboxId];
+        if (zone) {
+            const timezone = window.timezoneConverter.majorTimezones.find(tz => tz.zone === zone);
+            if (timezone) {
+                settings.visibleTimezones.push({
+                    id: timezone.zone,
+                    name: timezone.name,
+                    zone: timezone.zone
+                });
+            }
+        }
     });
     
     localStorage.setItem('timezoneConverterSettings', JSON.stringify(settings));
     
-    // Update timezone display if on main page
-    if (document.getElementById('main-page').classList.contains('active')) {
-        window.timezoneConverter?.updateVisibleTimezones();
+    // Update the display
+    if (window.timezoneConverter) {
+        window.timezoneConverter.updateCurrentTimes();
     }
 }
 
@@ -311,8 +343,12 @@ function loadSettings() {
         
         // Check saved ones
         settings.visibleTimezones.forEach(tz => {
-            const checkbox = document.getElementById(`tz-${tz.zone.toLowerCase().replace('/', '-')}`);
-            if (checkbox) checkbox.checked = true;
+            // Convert timezone zone to checkbox ID format
+            const checkboxId = `tz-${tz.id.toLowerCase().replace(/\//g, '-').replace(/_/g, '_')}`;
+            const checkbox = document.getElementById(checkboxId);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
         });
     }
 }
